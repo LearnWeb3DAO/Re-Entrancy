@@ -1,0 +1,31 @@
+{
+  "name": "smart-contract-security-topics",
+  "version": "1.0.0",
+  "description": "In this module we would learn about various Smart contract hacks. Lets get started :)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LearnWeb3DAO/Smart-contract-security-Topics.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LearnWeb3DAO/Smart-contract-security-Topics/issues"
+  },
+  "homepage": "https://github.com/LearnWeb3DAO/Smart-contract-security-Topics#readme",
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.4",
+    "@nomiclabs/hardhat-waffle": "^2.0.2",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.5.3",
+    "hardhat": "^2.8.3"
+  },
+  "dependencies": {
+    "dotenv": "^14.2.0"
+  }
+}
