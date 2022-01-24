@@ -19,6 +19,8 @@ contract GoodContract {
         require(balances[msg.sender] > 0);
         (bool sent, ) = msg.sender.call{value: balances[msg.sender]}("");
         require(sent, "Failed to send ether");
+        // This code becomes unreachable because the contract's balance is drained 
+        // before user's balance could have been set to 0
         balances[msg.sender] = 0;
     }
 }
