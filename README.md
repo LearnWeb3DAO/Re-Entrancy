@@ -7,7 +7,7 @@ Who wants to do some hacking!!!
 ## What is Re-Entrancy?
 
 - Contract A calls a function in contract B
-- Then contract B calls back into contract A while contract A is still processing
+- Then contract B callsback contract A while contract A is still processing
 
 This can lead to some serious vulnerabilities in Smart contracts.
 
