@@ -85,7 +85,7 @@ contract GoodContract {
 
 - GoodContract has two functions
 
-  - addBalance() which adds balance of ether for an address
+  - addBalance() which adds ether balance for an address
   - withdraw() where users can withdraw all of their balance at once
 
 - Now lets create another file inside the contracts directory known as `BadContract.sol`
