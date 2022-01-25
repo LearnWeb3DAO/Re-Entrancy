@@ -204,7 +204,7 @@ contract GoodContract {
       await tx.wait();
 
       balanceETH = await provider.getBalance(_goodContract.address);
-      // Balance of the GoodContract's address is zero know
+      // Balance of the GoodContract's address is zero now
       expect(balanceETH).to.equal(BigNumber.from("0"));
     });
   });
