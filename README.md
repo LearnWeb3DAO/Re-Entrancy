@@ -1,6 +1,6 @@
 # Re-Entrancy
 
-Who wants to some hacking!!!
+Who wants to do some hacking!!!
 
 ---
 
