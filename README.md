@@ -1,12 +1,14 @@
 # Re-Entrancy
 
-Re-Entrancy is one of the oldest security vulnerabilities that was discovered in smart contracts. It is the exact vulnerability that caused the infamous 'DAO Hack' of 2016. Over 3.6 million ETH was stolen in the hack, which today is worth billions of dollars.
+Re-Entrancy is one of the oldest security vulnerabilities that was discovered in smart contracts. It is the exact vulnerability that caused the infamous 'DAO Hack' of 2016. Over 3.6 million ETH was stolen in the hack, which today is worth billions of dollars. 🤯
 
 At the time, the DAO contained 15% of all Ethereum on the network as Ethereum was relatively new. The failure was having a negative impact on the Ethereum network, and Vitalik Buterin proposed a software fork where the attacker would never be able to transfer out his ETH. Some people agreed, some did not. This was a highly controversial event, and one which still is full of controversy.
 
-At the end, it led to Ethereum being forked into two - Ethereum Classic, and the Ethereum we know today. Ethereum Classic's blockchain is the exact same as Ethereum up until the fork, but then proceeded as if the hack did happen and the attacker still controls the stolen funds. Today's Ethereum implemented the blacklist and it's as if that attack never happened.
+At the end, it led to Ethereum being forked into two - Ethereum Classic, and the Ethereum we know today. Ethereum Classic's blockchain is the exact same as Ethereum up until the fork, but then proceeded as if the hack did happen and the attacker still controls the stolen funds. Today's Ethereum implemented the blacklist and it's as if that attack never happened. 🤔
 
 This is a simplified version of that story, and the entire dynamic was quite complex. Everyone was stuck between a rock and a hard place. [You can read more about this story here to know what happened in more detail](https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/)
+
+Let's learn more about this hack! 🚀
 
 ---
 
@@ -17,6 +19,8 @@ This is a simplified version of that story, and the entire dynamic was quite com
 Re-Entrancy is the vulnerability in which if `Contract A` calls a function in `Contract B`, `Contract B` can then call back into `Contract A` while `Contract A` is still processing.
 
 This can lead to some serious vulnerabilities in Smart contracts, often creating the possibility of draining funds from a contract.
+
+---
 
 Let's understand how this works with the example shown in the above diagram. Let's say `Contract A` has some function - call it `f()` that does 3 things:
 
@@ -224,6 +228,6 @@ If you were to apply this on the `withdraw` function, the callbacks into `withdr
 
 These are optional, but recommended, readings
 
-- [DAO Hack](<(https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/)>)
+- [DAO Hack](https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/)
 - [Reentrancy Guard Library](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol)
 - [Hardhat Testing](https://hardhat.org/tutorial/testing-contracts.html)
