@@ -191,7 +191,7 @@ describe("Attack", function () {
 
 In this test, we first deploy both `GoodContract` and `BadContract`.
 
-We then get two signers from Hardhat - the testing account gives us access to 10 accounts which are pre-funded with ETH. We treat one as an innocent user, and the other as the attacker.
+We then get two signers from Hardhat - the testing account gives us access to 2 accounts which are pre-funded with ETH. We treat one as an innocent user, and the other as the attacker.
 
 We have the innocent user send 10 ETH to `GoodContract`. Then, the attacker starts the attack by calling `attack()` on `BadContract` and sending 1 ETH to it.
 
