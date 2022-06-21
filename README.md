@@ -10,6 +10,8 @@ This is a simplified version of that story, and the entire dynamic was quite com
 
 Let's learn more about this hack! 🚀
 
+<Quiz questionId="3e4cc3db-dd7c-492e-ae31-e200cf7181dd" />
+
 ---
 
 ## What is Re-Entrancy?
@@ -205,6 +207,8 @@ npx hardhat test
 
 If all your tests are passing, then the attack succeeded!
 
+<Quiz questionId="606127d0-4268-4bb6-8a7c-27fd0f493b0b" />
+
 ## Prevention
 
 There are two things you can do.
@@ -223,6 +227,9 @@ modifier nonReentrant() {
 ```
 
 If you were to apply this on the `withdraw` function, the callbacks into `withdraw` would fail because `locked` will be equal to `true` until the first `withdraw` function finishes executing, thereby also preventing re-entrancy.
+
+<Quiz questionId="6bd55dcf-31d5-4e9f-a37d-966f132ce31f" />
+<Quiz questionId="bf5fe91d-e039-457a-8bee-c64877590df6" />
 
 ## Readings
 
