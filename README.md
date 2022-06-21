@@ -231,3 +231,5 @@ These are optional, but recommended, readings
 - [DAO Hack](https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/)
 - [Reentrancy Guard Library](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol)
 - [Hardhat Testing](https://hardhat.org/tutorial/testing-contracts.html)
+
+<SubmitQuiz />
