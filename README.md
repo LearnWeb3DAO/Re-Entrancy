@@ -1,14 +1,14 @@
 # Re-Entrancy
 
-Re-Entrancy is one of the oldest security vulnerabilities that was discovered in smart contracts. It is the exact vulnerability that caused the infamous 'DAO Hack' of 2016. Over 3.6 million ETH was stolen in the hack, which today is worth billions of dollars. 🤯
+Re-Entrancy is one of the oldest security vulnerabilities that was discovered in smart contracts. It is the exact vulnerability that caused the infamous 'DAO Hack' of 2016. Over 3.6 million ETH was stolen in the hack, at the time worth about $60 million USD. Today, this would be worth billions of dollars. 🤯
 
-At the time, the DAO contained 15% of all Ethereum on the network as Ethereum was relatively new. The failure was having a negative impact on the Ethereum network, and Vitalik Buterin proposed a software fork where the attacker would never be able to transfer out his ETH. Some people agreed, some did not. This was a highly controversial event, and one which still is full of controversy.
+At the time, the DAO contained 15% of all Ethereum on the network as Ethereum was relatively new. The failure was having a negative impact on the Ethereum network, and Vitalik Buterin proposed a software fork where the attacker would never be able to transfer out his ETH. Some people agreed, some did not. This was a highly controversial event, and one which still is full of controversy. However, before the solution could be implemented, a bug in the proposed code was discovered. Finally, a hard fork was implemented. This rolled back Ethereum's state to a time before the hack and moved all funds in the DAO contract to a different contract. From this contract, all investors could withdraw their funds again and none of the money went to the attacker.
 
-At the end, it led to Ethereum being forked into two - Ethereum Classic, and the Ethereum we know today. Ethereum Classic's blockchain is the exact same as Ethereum up until the fork, but then proceeded as if the hack did happen and the attacker still controls the stolen funds. Today's Ethereum implemented the blacklist and it's as if that attack never happened. 🤔
+However, a part of the Ethereum community didn't agree with this solution and continued working on the Ethereum chain without the hard fork. This chain is what we today know as `Ethereum Classic`. Ethereum Classic's blockchain is the exact same as Ethereum up until the fork, but then proceeded without refunding the monay to investors and the attacker still controls the stolen funds.
 
-This is a simplified version of that story, and the entire dynamic was quite complex. Everyone was stuck between a rock and a hard place. [You can read more about this story here to know what happened in more detail](https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/)
+This is a simplified version of that story, and the entire dynamic was quite complex. Everyone was stuck between a rock and a hard place. There are many writeups and more information on that story. If you are interested, there some links to recommended reading at the end of this exercise.
 
-Let's learn more about this hack! 🚀
+Let's learn more about the technical details of this hack! 🚀
 
 <Quiz questionId="3e4cc3db-dd7c-492e-ae31-e200cf7181dd" />
 
@@ -24,19 +24,19 @@ This can lead to some serious vulnerabilities in Smart contracts, often creating
 
 ---
 
-Let's understand how this works with the example shown in the above diagram. Let's say `Contract A` has some function - call it `f()` that does 3 things:
+Let's understand how this works with the example shown in the above diagram. Let's say `Contract A` has some function - call it `f()` - that does 3 things:
 
 - Checks the balance of ETH deposited into `Contract A` by `Contract B`
 - Sends the ETH back to `Contract B`
 - Updates the balance of `Contract B` to 0
 
-Since the balance gets updated after the ETH has been sent, `Contract B` can do some tricky stuff here. If `Contract B` was to create a `fallback()` or `receive()` function in it's contract, which would execute when it received ETH, it could call `f()` in `Contract A` again.
+Since the balance gets updated after the ETH has been sent, `Contract B` can do some tricky stuff here. If `Contract B` was to create a `fallback()` or `receive()` function in its contract, which would execute when it received ETH, it could call `f()` in `Contract A` again.
 
 Since `Contract A` hasn't yet updated the balance of `Contract B` to be 0 at that point, it would send ETH to `Contract B` again - and herein lies the exploit, and `Contract B` could keep doing this until `Contract A` was completely out of ETH.
 
 ## BUIDL
 
-We will create a couple of smart contracts, `GoodContract` and `BadContract` to demonstrate this behaviour. `BadContract` will be able to drain all the ETH out from `GoodContract`.
+We will create a couple of smart contracts, `GoodContract` and `BadContract`, to demonstrate this behaviour. `BadContract` will be able to drain all the ETH out from `GoodContract`.
 
 Lets build an example where you can experience how the Re-Entrancy attack happens.
 
@@ -66,7 +66,7 @@ Lets build an example where you can experience how the Re-Entrancy attack happen
 
 Now you have a hardhat project ready to go!
 
-Let's start by creating a new file inside the `contracts` directory called `GoodContract.sol`
+Let's start by creating a new file inside the `contracts` directory called `GoodContract.sol`.
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -93,9 +93,9 @@ contract GoodContract {
 }
 ```
 
-The contract is quite simple. The first function, `addBalance` updates a mapping to reflect how much ETH has been deposited into this contract by another address. The second function, `withdraw`, allows users to withdraw their ETH back - but the ETH is sent _before_ the balance is updated.
+The contract is quite simple. The first function, `addBalance`, updates a mapping to reflect how much ETH has been deposited into this contract by another address. The second function, `withdraw`, allows users to withdraw their ETH back - but the ETH is sent _before_ the balance is updated.
 
-Now lets create another file inside the contracts directory known as `BadContract.sol`
+Now let's create another file inside the contracts directory known as `BadContract.sol`
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -134,7 +134,7 @@ At this point, `GoodContract` will see that `BadContract` has a balance greater 
 
 The `receive()` function will check if `GoodContract` still has a balance greater than 0 ETH, and call the `withdraw` function in `GoodContract` again.
 
-This will create a loop where `GoodContract` will keep sending money to `BadContract` until it completely runs out of funds, and then finally reach a point where it updates `BadContract`'s balance to 0 and completes the transaction execution. At this point, the attacker has successfully stolen all the ETH from `GoodContract` due to re-entrancy.
+This will create a loop where `GoodContract` will keep sending money to `BadContract` until it completely runs out of funds, and then finally reaches a point where it updates `BadContract`'s balance to 0 and completes the transaction execution. At this point, the attacker has successfully stolen all the ETH from `GoodContract` due to re-entrancy.
 
 ---
 
@@ -235,7 +235,9 @@ If you were to apply this on the `withdraw` function, the callbacks into `withdr
 
 These are optional, but recommended, readings
 
-- [DAO Hack](https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/)
+- [What was the DAO?](https://www.gemini.com/cryptopedia/the-dao-hack-makerdao) on Cryptopedia 
+- [Understanding The DAO Attack](https://www.coindesk.com/learn/2016/06/25/understanding-the-dao-attack/) on CoinDesk (not up to date, does not contain information on the final resolution)
+- [The DAO](https://en.wikipedia.org/wiki/The_DAO_(organization)) on Wikipedia
 - [Reentrancy Guard Library](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/security/ReentrancyGuard.sol)
 - [Hardhat Testing](https://hardhat.org/tutorial/testing-contracts.html)
 
