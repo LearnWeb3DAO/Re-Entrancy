@@ -38,6 +38,11 @@ Since `Contract A` hasn't yet updated the balance of `Contract B` to be 0 at tha
 
 We will create a couple of smart contracts, `GoodContract` and `BadContract` to demonstrate this behaviour. `BadContract` will be able to drain all the ETH out from `GoodContract`.
 
+> Note
+All of these commands should work smoothly . If you are on windows and face Errors
+Like `Cannot read properties of null (reading 'pickAlgorithm')`
+Try Clearing the NPM cache using `npm cache clear --force`.
+
 Lets build an example where you can experience how the Re-Entrancy attack happens.
   
 - To set up a Hardhat project, Open up a terminal and execute these commands
