@@ -39,20 +39,19 @@ Since `Contract A` hasn't yet updated the balance of `Contract B` to be 0 at tha
 We will create a couple of smart contracts, `GoodContract` and `BadContract` to demonstrate this behaviour. `BadContract` will be able to drain all the ETH out from `GoodContract`.
 
 Lets build an example where you can experience how the Re-Entrancy attack happens.
-
-- To setup a Hardhat project, Open up a terminal and execute these commands
+  
+- To set up a Hardhat project, Open up a terminal and execute these commands
 
   ```bash
   npm init --yes
   npm install --save-dev hardhat
   ```
-
-- If you are on Windows, please do this extra step and install these libraries as well :)
+  
+- If you are on a Windows machine, please do this extra step and install these libraries as well :)
 
   ```bash
-  npm install --save-dev @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-ethers ethers
+  npm install --save-dev @nomicfoundation/hardhat-toolbox @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-ethers ethers
   ```
-
 - In the same directory where you installed Hardhat run:
 
   ```bash
